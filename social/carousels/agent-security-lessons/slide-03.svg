@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350" role="img">
+  <defs>
+    <radialGradient id="mist" cx="50%" cy="15%" r="85%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.96"/>
+      <stop offset="58%" stop-color="#F5F0E8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#DFE8F3" stop-opacity="1"/>
+    </radialGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="1350" fill="url(#mist)"/>
+  <circle cx="846" cy="410" r="260" fill="none" stroke="#070707" stroke-width="28" opacity="0.045"/>
+  <circle cx="836" cy="405" r="210" fill="none" stroke="#1B4F72" stroke-width="2" opacity="0.14"/>
+  <path d="M-40 980 C190 850 300 1120 530 1000 S900 820 1140 950" fill="none" stroke="#070707" stroke-width="72" opacity="0.035" filter="url(#soft)"/>
+  <path d="M130 250 C230 180 310 210 400 150 C500 82 590 125 705 88" fill="none" stroke="#1B4F72" stroke-width="4" stroke-linecap="round" opacity="0.34"/>
+  <path d="M165 265 C260 218 330 245 430 205 C520 170 610 194 720 160" fill="none" stroke="#1B4F72" stroke-width="1.5" stroke-linecap="round" opacity="0.24"/>
+  <text x="82" y="122" fill="#1B4F72" font-family="Georgia, 'Noto Serif SC', serif" font-size="22" letter-spacing="7">BUILD NOTES</text>
+  <text x="956" y="122" fill="#070707" font-family="Georgia, 'Noto Serif SC', serif" font-size="18" opacity="0.52" text-anchor="end">03/07</text>
+  <g transform="translate(80 230)">
+    <text x="0" y="0" fill="#070707" font-family="Georgia, 'Noto Serif SC', serif" font-size="66" font-weight="600">Lesson 2</text>
+    <text x="0" y="96" fill="#1B4F72" font-family="Georgia, 'Noto Serif SC', serif" font-size="44" font-weight="400">approval is not enough</text>
+    <path d="M0 218 C130 198 260 240 430 214" fill="none" stroke="#1B4F72" stroke-width="5" stroke-linecap="round"/>
+    <text x="0" y="345" fill="#303033" font-family="Georgia, 'Noto Serif SC', serif" font-size="32">If the agent sees a poisoned tool before</text>
+<text x="0" y="393" fill="#303033" font-family="Georgia, 'Noto Serif SC', serif" font-size="32">approval, the damage may already start in</text>
+<text x="0" y="441" fill="#303033" font-family="Georgia, 'Noto Serif SC', serif" font-size="32">context.</text>
+<text x="0" y="489" fill="#303033" font-family="Georgia, 'Noto Serif SC', serif" font-size="32">Unsafe tools should be blocked before</text>
+<text x="0" y="537" fill="#303033" font-family="Georgia, 'Noto Serif SC', serif" font-size="32">listing.</text>
+  </g>
+  <g transform="translate(820 1060)">
+    <rect x="0" y="0" width="116" height="116" fill="none" stroke="#B22222" stroke-width="5"/>
+    <text x="58" y="74" fill="#B22222" font-family="'Noto Serif SC', Georgia, serif" font-size="56" text-anchor="middle">二</text>
+  </g>
+  <text x="84" y="1188" fill="#070707" opacity="0.55" font-family="Georgia, 'Noto Serif SC', serif" font-size="22">Niraven · No AI slop</text>
+  <text x="84" y="1230" fill="#1B4F72" opacity="0.38" font-family="Georgia, 'Noto Serif SC', serif" font-size="18" letter-spacing="8">BUILD IN PUBLIC</text>
+  <path d="M82 1270 H998" stroke="#070707" stroke-width="1" opacity="0.12"/>
+</svg>
