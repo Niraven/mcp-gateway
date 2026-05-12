@@ -1,0 +1,31 @@
+{
+  "servers": {
+    "memory": {
+      "command": "node",
+      "args": [
+        "/opt/sandbox/workspace/mcp-gateway/node_modules/@modelcontextprotocol/server-memory/dist/index.js"
+      ]
+    }
+  },
+  "policies": {
+    "rateLimit": {
+      "maxCallsPerMinute": 5,
+      "perTool": {
+        "delete_entities": {
+          "maxCallsPerMinute": 1
+        }
+      }
+    },
+    "security": {
+      "blockOnCritical": true,
+      "blockOnHigh": true,
+      "scanDescriptions": true,
+      "scanInputs": true
+    }
+  },
+  "audit": {
+    "enabled": true,
+    "logPath": "/opt/sandbox/workspace/mcp-gateway/test/e2e-audit.jsonl",
+    "includeArgs": true
+  }
+}
