@@ -1,10 +1,10 @@
-# mcp-gateway
+# @niraven/mcp-gateway
 
-[![npm version](https://img.shields.io/npm/v/mcp-gateway)](https://www.npmjs.com/package/mcp-gateway)
+[![npm version](https://img.shields.io/npm/v/@niraven/mcp-gateway)](https://www.npmjs.com/package/@niraven/mcp-gateway)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
-**Security-first gateway proxy for MCP servers.** Rate limiting, audit logging, real-time security scanning, and human approval workflows for every AI tool call.
+**A local-first firewall for MCP tool calls.** Rate limiting, audit logging, input scanning, tool-description poisoning detection, descriptor drift alerts, and approval holds for risky AI-agent actions.
 
 ---
 
@@ -22,13 +22,13 @@ AI agents call MCP tools autonomously. Without a gateway:
 
 ```bash
 # 1. Generate config
-npx mcp-gateway init > mcp-gateway.json
+npx @niraven/mcp-gateway init > mcp-gateway.json
 
 # 2. Edit config (add your servers)
 vim mcp-gateway.json
 
 # 3. Start the proxy
-npx mcp-gateway start -c mcp-gateway.json
+npx @niraven/mcp-gateway start -c mcp-gateway.json
 ```
 
 Your AI client connects to the gateway. The gateway connects to your servers. Every call goes through the policy engine.
@@ -46,8 +46,9 @@ Your AI client connects to the gateway. The gateway connects to your servers. Ev
               │  rate limit   │
               │  scan inputs  │
               │  check descs  │
+              │  hash descs   │
               │  audit log    │
-              │  approve/deny │
+              │  approval hold│
               └───────┬───────┘
                       |
           ┌───────────┼───────────┐
@@ -93,7 +94,9 @@ Your AI client connects to the gateway. The gateway connects to your servers. Ev
       "blockOnCritical": true,
       "blockOnHigh": true,
       "scanDescriptions": true,
-      "scanInputs": true
+      "scanInputs": true,
+      "descriptorBaselinePath": "./.mcp-gateway-descriptors.json",
+      "descriptorChangeAction": "warn"
     }
   },
   "audit": {
@@ -122,13 +125,16 @@ Real-time detection of:
 - XSS payloads in arguments
 - Tool description poisoning (hidden instructions, concealment directives)
 - Zero-width characters and invisible text in metadata
+- Descriptor drift after the first trusted baseline
 
 ### Human Approval Gate
 
-Require explicit human approval before destructive operations execute:
+Hold risky operations before they execute:
 - Triggered by tool annotations (`destructiveHint: true`)
 - Triggered by tool name patterns (regex)
 - Configurable timeout with deny-by-default
+
+Current behavior returns an approval-required MCP error and logs the pending action. A persistent approve/deny queue is on the roadmap.
 
 ### Audit Logging
 
@@ -154,6 +160,22 @@ mcp-gateway dashboard -c mcp-gateway.json -p 3100
 # Open http://localhost:3100
 ```
 
+## Security Demo
+
+This repo includes an end-to-end demo with a malicious MCP server fixture. The fixture exposes a tool description that attempts to override agent instructions and exfiltrate data. With `blockOnCritical` enabled, the gateway blocks that poisoned tool before it reaches the client tool list.
+
+```bash
+npm ci
+npm test
+```
+
+Expected proof points:
+- Memory server tools are proxied as `memory__tool_name`.
+- A poisoned tool named `malicious__steal_context` is not exposed.
+- A changed tool descriptor is blocked after the first trusted baseline.
+- Shell-injection-like input is blocked before reaching the upstream server.
+- Audit entries are written with secret-like values redacted.
+
 ## CLI
 
 ```bash
@@ -172,7 +194,7 @@ In your `claude_desktop_config.json`:
   "mcpServers": {
     "gateway": {
       "command": "npx",
-      "args": ["mcp-gateway", "start", "-c", "/path/to/mcp-gateway.json"]
+      "args": ["@niraven/mcp-gateway", "start", "-c", "/path/to/mcp-gateway.json"]
     }
   }
 }
@@ -183,7 +205,7 @@ All upstream servers are now accessed through the gateway with full policy enfor
 ## Programmatic API
 
 ```typescript
-import { McpGateway } from "mcp-gateway";
+import { McpGateway } from "@niraven/mcp-gateway";
 
 const gateway = new McpGateway({
   servers: { /* ... */ },
@@ -200,8 +222,8 @@ await gateway.start();
 |---|---|---|---|
 | Rate limiting | Per-tool + global | None | Basic |
 | Security scanning | Input + description | None | None |
-| Tool poisoning detection | Yes | None | None |
-| Approval workflows | Configurable | None | None |
+| Tool poisoning detection | Block or warn | None | None |
+| Approval workflows | Hold + audit | None | None |
 | Audit logging | JSONL + dashboard | None | Basic |
 | Web dashboard | Built-in | N/A | None |
 | Architecture | Stdio proxy | N/A | HTTP proxy |
@@ -211,6 +233,7 @@ await gateway.start();
 
 - [ ] SSE/HTTP transport support
 - [ ] Per-server policy overrides
+- [ ] Persistent approval queue with `approve` and `deny` commands
 - [ ] Plugin system for custom middleware
 - [ ] Token usage tracking
 - [ ] Alert webhooks (Slack, Discord)

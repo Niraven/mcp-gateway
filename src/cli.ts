@@ -107,6 +107,8 @@ program
           blockOnHigh: false,
           scanDescriptions: true,
           scanInputs: true,
+          descriptorBaselinePath: "./.mcp-gateway-descriptors.json",
+          descriptorChangeAction: "warn",
         },
       },
       audit: {

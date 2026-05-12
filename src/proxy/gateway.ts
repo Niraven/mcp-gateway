@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -12,6 +15,7 @@ import type {
   ToolCallContext,
   MiddlewareResult,
   AuditEntry,
+  SecurityFinding,
 } from "../types/index.js";
 import { createRateLimiter } from "../middleware/rate-limiter.js";
 import { createSecurityScanner, scanToolDescription } from "../middleware/security-scanner.js";
@@ -24,6 +28,17 @@ interface UpstreamConnection {
   name: string;
 }
 
+interface DescriptorRecord {
+  hash: string;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+interface DescriptorBaseline {
+  version: 1;
+  tools: Record<string, DescriptorRecord>;
+}
+
 export class McpGateway {
   private server: Server;
   private upstreams: Map<string, UpstreamConnection> = new Map();
@@ -31,6 +46,9 @@ export class McpGateway {
   private auditLogger: AuditLogger | null = null;
   private config: GatewayConfig;
   private toolToServer: Map<string, string> = new Map();
+  private toolAnnotations: Map<string, ToolCallContext["annotations"]> = new Map();
+  private descriptorBaseline: DescriptorBaseline | null = null;
+  private descriptorBaselineDirty = false;
 
   constructor(config: GatewayConfig) {
     this.config = config;
@@ -61,18 +79,43 @@ export class McpGateway {
   private setupHandlers(): void {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       const allTools: Array<{ name: string; description?: string; inputSchema: unknown }> = [];
+      this.toolToServer.clear();
+      this.toolAnnotations.clear();
 
       for (const [serverName, upstream] of this.upstreams) {
         try {
           const response = await upstream.client.listTools();
           for (const tool of response.tools) {
             const prefixedName = `${serverName}__${tool.name}`;
-            this.toolToServer.set(prefixedName, serverName);
 
-            const descFindings = scanToolDescription(tool.description ?? "");
+            const descFindings = this.config.policies?.security?.scanDescriptions
+              ? scanToolDescription(tool.description ?? "")
+              : [];
+            const descriptorFindings = await this.checkDescriptor(prefixedName, {
+              name: tool.name,
+              description: tool.description ?? "",
+              inputSchema: tool.inputSchema,
+              annotations: tool.annotations,
+            });
+            const findings = [...descFindings, ...descriptorFindings];
+            const shouldBlock = this.shouldBlockDescriptor(findings);
+            if (shouldBlock) {
+              process.stderr.write(`[mcp-gateway] Blocked unsafe descriptor for ${prefixedName}: ${findings.map(f => f.ruleId).join(", ")}\n`);
+              await this.audit({
+                server: serverName,
+                tool: tool.name,
+                args: undefined,
+                findings,
+              }, "blocked", "Unsafe tool descriptor blocked", undefined, findings);
+              continue;
+            }
+
+            this.toolToServer.set(prefixedName, serverName);
+            this.toolAnnotations.set(prefixedName, normalizeAnnotations(tool.annotations));
+
             let description = tool.description ?? "";
-            if (descFindings.length > 0) {
-              description = `[GATEWAY WARNING: ${descFindings.length} security findings] ${description}`;
+            if (findings.length > 0) {
+              description = `[GATEWAY WARNING: ${findings.length} security findings] ${description}`;
             }
 
             allTools.push({
@@ -86,6 +129,7 @@ export class McpGateway {
         }
       }
 
+      await this.saveDescriptorBaseline();
       return { tools: allTools };
     });
 
@@ -113,6 +157,7 @@ export class McpGateway {
         server: serverName,
         tool: originalToolName,
         args: request.params.arguments,
+        annotations: this.toolAnnotations.get(toolName),
       };
 
       const middlewareResult = await this.runMiddlewares(ctx);
@@ -157,6 +202,69 @@ export class McpGateway {
         };
       }
     });
+  }
+
+  private shouldBlockDescriptor(findings: SecurityFinding[]): boolean {
+    const policy = this.config.policies?.security;
+    if (!policy || findings.length === 0) return false;
+    const hasCritical = findings.some(f => f.severity === "critical");
+    const hasHigh = findings.some(f => f.severity === "high");
+    return (hasCritical && policy.blockOnCritical) || (hasHigh && policy.blockOnHigh);
+  }
+
+  private getDescriptorBaselinePath(): string {
+    return resolve(this.config.policies?.security?.descriptorBaselinePath ?? ".mcp-gateway-descriptors.json");
+  }
+
+  private async loadDescriptorBaseline(): Promise<DescriptorBaseline> {
+    if (this.descriptorBaseline) return this.descriptorBaseline;
+    const path = this.getDescriptorBaselinePath();
+    try {
+      const raw = await readFile(path, "utf-8");
+      this.descriptorBaseline = JSON.parse(raw) as DescriptorBaseline;
+    } catch {
+      this.descriptorBaseline = { version: 1, tools: {} };
+      this.descriptorBaselineDirty = true;
+    }
+    return this.descriptorBaseline;
+  }
+
+  private async saveDescriptorBaseline(): Promise<void> {
+    if (!this.descriptorBaselineDirty || !this.descriptorBaseline) return;
+    const path = this.getDescriptorBaselinePath();
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, JSON.stringify(this.descriptorBaseline, null, 2) + "\n");
+    this.descriptorBaselineDirty = false;
+  }
+
+  private async checkDescriptor(prefixedName: string, descriptor: unknown): Promise<SecurityFinding[]> {
+    const policy = this.config.policies?.security;
+    if (!policy?.scanDescriptions) return [];
+
+    const baseline = await this.loadDescriptorBaseline();
+    const hash = createHash("sha256").update(stableStringify(descriptor)).digest("hex");
+    const now = new Date().toISOString();
+    const existing = baseline.tools[prefixedName];
+
+    if (!existing) {
+      baseline.tools[prefixedName] = { hash, firstSeen: now, lastSeen: now };
+      this.descriptorBaselineDirty = true;
+      return [];
+    }
+
+    existing.lastSeen = now;
+    this.descriptorBaselineDirty = true;
+
+    if (existing.hash !== hash) {
+      const severity = policy.descriptorChangeAction === "block" ? "high" : "medium";
+      return [{
+        ruleId: "descriptor-changed",
+        severity,
+        message: `Tool descriptor changed since baseline for ${prefixedName}`,
+      }];
+    }
+
+    return [];
   }
 
   private async runMiddlewares(ctx: ToolCallContext): Promise<MiddlewareResult> {
@@ -259,4 +367,25 @@ export class McpGateway {
     await this.auditLogger?.close();
     await this.server.close();
   }
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record).sort().map(key => `${JSON.stringify(key)}:${stableStringify(record[key])}`).join(",")}}`;
+}
+
+function normalizeAnnotations(value: unknown): ToolCallContext["annotations"] {
+  if (!value || typeof value !== "object") return undefined;
+  const record = value as Record<string, unknown>;
+  return {
+    readOnlyHint: typeof record.readOnlyHint === "boolean" ? record.readOnlyHint : undefined,
+    destructiveHint: typeof record.destructiveHint === "boolean" ? record.destructiveHint : undefined,
+    idempotentHint: typeof record.idempotentHint === "boolean" ? record.idempotentHint : undefined,
+  };
 }

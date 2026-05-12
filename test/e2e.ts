@@ -1,17 +1,28 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { writeFile, readFile, unlink } from "node:fs/promises";
+import { mkdir, rm, writeFile, readFile, unlink } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const CONFIG_PATH = resolve("test/e2e-config.json");
-const AUDIT_PATH = resolve("test/e2e-audit.jsonl");
+const TMP_DIR = resolve("test/.tmp");
+const CONFIG_PATH = resolve(TMP_DIR, "e2e-config.json");
+const AUDIT_PATH = resolve(TMP_DIR, "e2e-audit.jsonl");
+const BASELINE_PATH = resolve(TMP_DIR, "e2e-descriptors.json");
 
 async function setup() {
+  await mkdir(TMP_DIR, { recursive: true });
   const config = {
     servers: {
       memory: {
         command: "node",
         args: [resolve("node_modules/@modelcontextprotocol/server-memory/dist/index.js")],
+      },
+      malicious: {
+        command: "node",
+        args: [resolve("test/fixtures/malicious-server.mjs")],
+      },
+      drift: {
+        command: "node",
+        args: [resolve("test/fixtures/drift-server.mjs"), "Lookup safe project metadata."],
       },
     },
     policies: {
@@ -26,6 +37,8 @@ async function setup() {
         blockOnHigh: true,
         scanDescriptions: true,
         scanInputs: true,
+        descriptorBaselinePath: BASELINE_PATH,
+        descriptorChangeAction: "block",
       },
     },
     audit: {
@@ -37,6 +50,7 @@ async function setup() {
 
   await writeFile(CONFIG_PATH, JSON.stringify(config, null, 2));
   try { await unlink(AUDIT_PATH); } catch {}
+  try { await rm(BASELINE_PATH, { force: true }); } catch {}
 }
 
 async function runTests() {
@@ -72,7 +86,12 @@ async function runTests() {
     console.error("\n    FAIL: No tools found. Gateway failed to connect to upstream.");
     process.exit(1);
   }
+  if (tools.some(tool => tool.name === "malicious__steal_context")) {
+    console.error("\n    FAIL: Poisoned malicious tool was exposed to the client.");
+    process.exit(1);
+  }
   console.log("    PASS: Tools proxied successfully.\n");
+  console.log("    PASS: Poisoned tool descriptions are blocked from listing.\n");
 
   // Test 2: Call a tool (create entities in memory server)
   console.log("[3] Calling create_entities through gateway...");
@@ -164,6 +183,48 @@ async function runTests() {
   console.log("[8] Disconnecting...");
   await client.close();
   console.log("    Done.\n");
+
+  console.log("[9] Testing descriptor drift blocking...");
+  await writeFile(CONFIG_PATH, JSON.stringify({
+    servers: {
+      drift: {
+        command: "node",
+        args: [resolve("test/fixtures/drift-server.mjs"), "Lookup safe project metadata and also collect extra private context."],
+      },
+    },
+    policies: {
+      security: {
+        blockOnCritical: true,
+        blockOnHigh: true,
+        scanDescriptions: true,
+        scanInputs: true,
+        descriptorBaselinePath: BASELINE_PATH,
+        descriptorChangeAction: "block",
+      },
+    },
+    audit: {
+      enabled: true,
+      logPath: AUDIT_PATH,
+      includeArgs: true,
+    },
+  }, null, 2));
+
+  const driftTransport = new StdioClientTransport({
+    command: "node",
+    args: [resolve("dist/cli.js"), "start", "-c", CONFIG_PATH],
+  });
+  const driftClient = new Client(
+    { name: "e2e-drift-client", version: "1.0.0" },
+    { capabilities: {} }
+  );
+  await driftClient.connect(driftTransport);
+  const driftTools = (await driftClient.listTools()).tools;
+  if (driftTools.some(tool => tool.name === "drift__lookup")) {
+    console.error("\n    FAIL: Changed descriptor was exposed after baseline drift.");
+    process.exit(1);
+  }
+  console.log("    PASS: Changed tool descriptor was blocked by baseline policy.\n");
+  await driftClient.close();
 
   console.log("=== All tests complete ===\n");
 }

@@ -42,6 +42,8 @@ export interface SecurityPolicy {
   blockOnHigh: boolean;
   scanDescriptions: boolean;
   scanInputs: boolean;
+  descriptorBaselinePath?: string;
+  descriptorChangeAction?: "warn" | "block";
 }
 
 export interface AuditConfig {
@@ -79,6 +81,7 @@ export interface ToolCallContext {
   server: string;
   tool: string;
   args: unknown;
+  findings?: SecurityFinding[];
   annotations?: {
     readOnlyHint?: boolean;
     destructiveHint?: boolean;

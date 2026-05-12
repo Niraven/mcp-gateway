@@ -18,8 +18,8 @@ export class AuditLogger {
   async log(entry: AuditEntry): Promise<void> {
     const sanitized: AuditEntry = {
       ...entry,
-      args: this.includeArgs ? entry.args : undefined,
-      result: this.includeResults ? entry.result : undefined,
+      args: this.includeArgs ? redactSecrets(entry.args) : undefined,
+      result: this.includeResults ? redactSecrets(entry.result) : undefined,
     };
 
     const line = JSON.stringify(sanitized) + "\n";
@@ -69,4 +69,32 @@ export class AuditLogger {
     ];
     return lines.join("\n");
   }
+}
+
+function redactSecrets(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (Array.isArray(value)) return value.map(redactSecrets);
+  if (typeof value === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, nestedValue] of Object.entries(value as Record<string, unknown>)) {
+      if (isSecretKey(key)) {
+        result[key] = "[REDACTED]";
+      } else {
+        result[key] = redactSecrets(nestedValue);
+      }
+    }
+    return result;
+  }
+  if (typeof value === "string" && looksLikeSecret(value)) {
+    return "[REDACTED]";
+  }
+  return value;
+}
+
+function isSecretKey(key: string): boolean {
+  return /token|secret|password|passwd|api[_-]?key|authorization|credential/i.test(key);
+}
+
+function looksLikeSecret(value: string): boolean {
+  return /\b(sk-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9_]{20,}|xox[baprs]-[A-Za-z0-9-]{20,})\b/.test(value);
 }

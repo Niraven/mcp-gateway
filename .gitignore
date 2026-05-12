@@ -3,4 +3,6 @@ dist/
 *.tsbuildinfo
 .DS_Store
 mcp-audit.jsonl
+.mcp-gateway-descriptors.json
+test/.tmp/
 linkedin/
