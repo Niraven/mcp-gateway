@@ -106,16 +106,22 @@ Not more agent hype. More control around what agents can touch.
 
 Source files:
 
+- `social/carousels/mcp-gateway-launch/mcp-gateway-launch.pdf`
 - `social/carousels/mcp-gateway-launch/slide-01.svg`
 - `social/carousels/mcp-gateway-launch/png/slide-01.png`
 
-Upload the PNGs in order as a LinkedIn carousel.
+Recommended LinkedIn upload: use the PDF as a document carousel.
+
+Fallback upload: use the PNGs in order as an image carousel.
 
 ## Carousel 2: Agent Security Lessons
 
 Source files:
 
+- `social/carousels/agent-security-lessons/agent-security-lessons.pdf`
 - `social/carousels/agent-security-lessons/slide-01.svg`
 - `social/carousels/agent-security-lessons/png/slide-01.png`
 
-Upload the PNGs in order as a LinkedIn carousel.
+Recommended LinkedIn upload: use the PDF as a document carousel.
+
+Fallback upload: use the PNGs in order as an image carousel.
