@@ -1,10 +1,12 @@
 # @niraven/mcp-gateway
 
-[![npm version](https://img.shields.io/npm/v/@niraven/mcp-gateway)](https://www.npmjs.com/package/@niraven/mcp-gateway)
+[![Status: pre-release](https://img.shields.io/badge/status-pre--release-f59e0b)](https://github.com/Niraven/mcp-gateway)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
 **A local-first firewall for MCP tool calls.** Rate limiting, audit logging, input scanning, tool-description poisoning detection, descriptor drift alerts, and approval holds for risky AI-agent actions.
+
+![mcp-gateway architecture](docs/assets/architecture.svg)
 
 ---
 
@@ -163,6 +165,8 @@ mcp-gateway dashboard -c mcp-gateway.json -p 3100
 ## Security Demo
 
 This repo includes an end-to-end demo with a malicious MCP server fixture. The fixture exposes a tool description that attempts to override agent instructions and exfiltrate data. With `blockOnCritical` enabled, the gateway blocks that poisoned tool before it reaches the client tool list.
+
+![mcp-gateway security demo](docs/assets/security-demo.gif)
 
 ```bash
 npm ci
