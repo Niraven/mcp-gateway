@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mcp-gateway</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --surface-0: oklch(12% 0.008 250);
+  --surface-1: oklch(16% 0.008 250);
+  --surface-2: oklch(20% 0.008 250);
+  --surface-3: oklch(24% 0.01 250);
+  --text-primary: oklch(92% 0.005 250);
+  --text-secondary: oklch(65% 0.01 250);
+  --text-muted: oklch(50% 0.008 250);
+  --accent-teal: oklch(72% 0.15 185);
+  --accent-coral: oklch(68% 0.18 25);
+  --accent-amber: oklch(75% 0.15 75);
+  --accent-purple: oklch(65% 0.15 300);
+  --border: oklch(25% 0.01 250);
+  --radius: 6px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+html { font-size: 15px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  letter-spacing: 0.01em;
+}
+
+.layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.logo h1 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.logo .version {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: var(--surface-1);
+  padding: 6px 12px;
+  border-radius: 20px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-teal);
+}
+
+.status-dot.disconnected { background: var(--accent-coral); }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto 1fr;
+  gap: 16px;
+}
+
+.panel {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: border-color 200ms var(--ease-out);
+}
+
+.panel:hover { border-color: oklch(30% 0.01 250); }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.stat-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.stat-value.teal { color: var(--accent-teal); }
+.stat-value.coral { color: var(--accent-coral); }
+.stat-value.amber { color: var(--accent-amber); }
+.stat-value.purple { color: var(--accent-purple); }
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.feed-panel {
+  grid-column: 1 / 3;
+  grid-row: 3;
+  max-height: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-scroll {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.feed-entry {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(-4px);
+  animation: fadeIn 300ms var(--ease-out) forwards;
+}
+
+@keyframes fadeIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.feed-time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+}
+
+.feed-tool {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.feed-server {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-allowed { background: oklch(25% 0.05 185); color: var(--accent-teal); }
+.badge-blocked { background: oklch(25% 0.05 25); color: var(--accent-coral); }
+.badge-rate-limited { background: oklch(25% 0.05 75); color: var(--accent-amber); }
+
+.sidebar-panel {
+  grid-column: 3;
+  grid-row: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.server-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.server-item:last-child { border-bottom: none; }
+
+.server-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-teal);
+  flex-shrink: 0;
+}
+
+.server-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.server-tools {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.rate-bar {
+  margin-bottom: 12px;
+}
+
+.rate-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+}
+
+.rate-bar-label { color: var(--text-secondary); }
+.rate-bar-value { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.rate-bar-track {
+  height: 4px;
+  background: var(--surface-2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rate-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent-teal);
+  transition: width 500ms var(--ease-out);
+}
+
+.rate-bar-fill.warning { background: var(--accent-amber); }
+.rate-bar-fill.critical { background: var(--accent-coral); }
+
+.alert-item {
+  padding: 10px 12px;
+  background: oklch(18% 0.02 25);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--accent-coral);
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+}
+
+.alert-tool {
+  font-weight: 600;
+  color: var(--accent-coral);
+}
+
+.alert-reason {
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.alert-time {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  padding: 24px 0;
+  text-align: center;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 3px;
+  height: 14px;
+  margin-bottom: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.rate-section, .alerts-section, .servers-section {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <header>
+    <div class="logo">
+      <h1>mcp-gateway</h1>
+      <span class="version">v0.1.0</span>
+    </div>
+    <div class="status-pill">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">connecting...</span>
+    </div>
+  </header>
+
+  <div class="stat-grid" id="stats">
+    <div class="stat">
+      <div class="stat-value teal" id="statAllowed">-</div>
+      <div class="stat-label">Allowed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value coral" id="statBlocked">-</div>
+      <div class="stat-label">Blocked</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value amber" id="statRate">-</div>
+      <div class="stat-label">Rate Limited</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value purple" id="statTotal">-</div>
+      <div class="stat-label">Total Calls</div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top: 16px;">
+    <div class="panel feed-panel">
+      <div class="panel-header">
+        <span class="panel-title">Live Audit Feed</span>
+        <span class="panel-title" id="feedCount">0 entries</span>
+      </div>
+      <div class="feed-scroll" id="feedScroll">
+        <div class="empty-state" id="feedEmpty">No audit entries yet. Make some tool calls.</div>
+      </div>
+    </div>
+
+    <div class="sidebar-panel">
+      <div class="servers-section">
+        <div class="section-title">Upstream Servers</div>
+        <div id="serverList">
+          <div class="empty-state">No servers connected</div>
+        </div>
+      </div>
+
+      <div class="rate-section">
+        <div class="section-title">Rate Limits</div>
+        <div id="rateList">
+          <div class="empty-state">No rate data yet</div>
+        </div>
+      </div>
+
+      <div class="alerts-section">
+        <div class="section-title">Security Alerts</div>
+        <div id="alertList">
+          <div class="empty-state">No alerts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+let lastEntryCount = 0;
+
+async function fetchData() {
+  try {
+    const res = await fetch(`${API_BASE}/api/status`);
+    if (!res.ok) throw new Error('API error');
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function badgeClass(action) {
+  if (action === 'allowed') return 'badge-allowed';
+  if (action === 'blocked') return 'badge-blocked';
+  return 'badge-rate-limited';
+}
+
+function renderFeed(entries) {
+  const container = document.getElementById('feedScroll');
+  const empty = document.getElementById('feedEmpty');
+  const countEl = document.getElementById('feedCount');
+
+  if (entries.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  countEl.textContent = `${entries.length} entries`;
+
+  if (entries.length !== lastEntryCount) {
+    const recent = entries.slice(-50).reverse();
+    container.innerHTML = recent.map((e, i) => `
+      <div class="feed-entry" style="animation-delay: ${i * 30}ms">
+        <span class="feed-time">${formatTime(e.timestamp)}</span>
+        <span>
+          <span class="feed-tool">${e.tool}</span>
+          <span class="feed-server">${e.server}</span>
+        </span>
+        <span class="badge ${badgeClass(e.action)}">${e.action}</span>
+      </div>
+    `).join('');
+    lastEntryCount = entries.length;
+  }
+}
+
+function renderStats(entries) {
+  const allowed = entries.filter(e => e.action === 'allowed').length;
+  const blocked = entries.filter(e => e.action === 'blocked').length;
+  const rateLimited = entries.filter(e => e.reason && e.reason.includes('Rate limit')).length;
+
+  document.getElementById('statAllowed').textContent = allowed;
+  document.getElementById('statBlocked').textContent = blocked;
+  document.getElementById('statRate').textContent = rateLimited;
+  document.getElementById('statTotal').textContent = entries.length;
+}
+
+function renderServers(servers) {
+  const container = document.getElementById('serverList');
+  if (!servers || servers.length === 0) {
+    container.innerHTML = '<div class="empty-state">No servers connected</div>';
+    return;
+  }
+  container.innerHTML = servers.map(s => `
+    <div class="server-item">
+      <span class="server-dot"></span>
+      <span class="server-name">${s.name}</span>
+      <span class="server-tools">${s.tools} tools</span>
+    </div>
+  `).join('');
+}
+
+function renderRateLimits(rateLimits) {
+  const container = document.getElementById('rateList');
+  if (!rateLimits || rateLimits.length === 0) {
+    container.innerHTML = '<div class="empty-state">No rate data yet</div>';
+    return;
+  }
+  container.innerHTML = rateLimits.map(r => {
+    const pct = Math.min((r.count / r.limit) * 100, 100);
+    const cls = pct > 80 ? 'critical' : pct > 60 ? 'warning' : '';
+    return `
+      <div class="rate-bar">
+        <div class="rate-bar-header">
+          <span class="rate-bar-label">${r.tool}</span>
+          <span class="rate-bar-value">${r.count}/${r.limit}</span>
+        </div>
+        <div class="rate-bar-track">
+          <div class="rate-bar-fill ${cls}" style="width: ${pct}%"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAlerts(entries) {
+  const container = document.getElementById('alertList');
+  const blocked = entries.filter(e => e.action === 'blocked').slice(-5).reverse();
+  if (blocked.length === 0) {
+    container.innerHTML = '<div class="empty-state">No alerts</div>';
+    return;
+  }
+  container.innerHTML = blocked.map(e => `
+    <div class="alert-item">
+      <div class="alert-tool">${e.tool}</div>
+      <div class="alert-reason">${e.reason || 'Blocked'}</div>
+      <div class="alert-time">${formatTime(e.timestamp)}</div>
+    </div>
+  `).join('');
+}
+
+async function update() {
+  const data = await fetchData();
+  if (!data) {
+    document.getElementById('statusDot').classList.add('disconnected');
+    document.getElementById('statusText').textContent = 'disconnected';
+    return;
+  }
+
+  document.getElementById('statusDot').classList.remove('disconnected');
+  document.getElementById('statusText').textContent = `${data.servers?.length || 0} servers connected`;
+
+  renderStats(data.entries || []);
+  renderFeed(data.entries || []);
+  renderServers(data.servers || []);
+  renderRateLimits(data.rateLimits || []);
+  renderAlerts(data.entries || []);
+}
+
+update();
+setInterval(update, 2000);
+</script>
+</body>
+</html>
