@@ -1,0 +1,51 @@
+{
+  "name": "mcp-gateway",
+  "version": "0.1.0",
+  "description": "Security-first gateway proxy for MCP servers. Rate limiting, audit logging, tool approval workflows, and real-time threat detection.",
+  "type": "module",
+  "bin": {
+    "mcp-gateway": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "keywords": [
+    "mcp",
+    "gateway",
+    "proxy",
+    "security",
+    "rate-limiting",
+    "audit",
+    "model-context-protocol",
+    "ai-agents",
+    "tool-approval",
+    "middleware"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.6.1",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/server-memory": "0.6.2",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.6.0"
+  }
+}
