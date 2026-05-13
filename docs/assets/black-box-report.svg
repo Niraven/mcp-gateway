@@ -1,0 +1,53 @@
+<svg width="1200" height="760" viewBox="0 0 1200 760" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">MCP Gateway black-box run report preview</title>
+  <desc id="desc">A sample report card showing tool calls, risks, blocked actions, and reliability score.</desc>
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F7F2EA"/>
+      <stop offset="1" stop-color="#DDE9F6"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="30" flood-color="#07111f" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="760" fill="#F5F0E8"/>
+  <circle cx="992" cy="168" r="150" stroke="#1B4F72" stroke-opacity="0.13" stroke-width="26"/>
+  <path d="M108 628C206 546 272 676 375 590C478 504 539 636 654 556C768 477 855 527 947 442" stroke="#070707" stroke-opacity="0.08" stroke-width="34" stroke-linecap="round"/>
+  <path d="M147 124C272 78 406 85 547 126" stroke="#1B4F72" stroke-opacity="0.2" stroke-width="5" stroke-linecap="round"/>
+  <g filter="url(#shadow)">
+    <rect x="115" y="82" width="970" height="596" rx="34" fill="url(#paper)" stroke="#1B4F72" stroke-opacity="0.2"/>
+    <rect x="115" y="82" width="970" height="88" rx="34" fill="#070707"/>
+    <text x="158" y="137" fill="#F5F0E8" font-family="Georgia, serif" font-size="34" font-weight="700">MCP Gateway Run Report</text>
+    <text x="849" y="137" fill="#DFE8F3" font-family="Menlo, monospace" font-size="17">PUBLIC MODE · REDACTED</text>
+    <text x="158" y="226" fill="#1B4F72" font-family="Menlo, monospace" font-size="19" letter-spacing="3">BLACK-BOX SUMMARY</text>
+    <text x="158" y="276" fill="#070707" font-family="Georgia, serif" font-size="46" font-weight="700">5 tool calls inspected</text>
+    <text x="158" y="318" fill="#364152" font-family="Inter, Arial, sans-serif" font-size="24">2 allowed · 1 pending approval · 1 blocked · 1 rate-limited</text>
+    <g transform="translate(158 374)">
+      <rect width="190" height="128" rx="22" fill="#fff" fill-opacity="0.72" stroke="#1B4F72" stroke-opacity="0.18"/>
+      <text x="24" y="43" fill="#1B4F72" font-family="Menlo, monospace" font-size="16">RISKY CALLS</text>
+      <text x="24" y="96" fill="#070707" font-family="Georgia, serif" font-size="46" font-weight="700">3</text>
+    </g>
+    <g transform="translate(376 374)">
+      <rect width="280" height="128" rx="22" fill="#fff" fill-opacity="0.72" stroke="#1B4F72" stroke-opacity="0.18"/>
+      <text x="24" y="43" fill="#B22222" font-family="Menlo, monospace" font-size="16">BLOCKED</text>
+      <text x="24" y="96" fill="#070707" font-family="Georgia, serif" font-size="40" font-weight="700">drop_table</text>
+    </g>
+    <g transform="translate(684 374)">
+      <rect width="190" height="128" rx="22" fill="#fff" fill-opacity="0.72" stroke="#1B4F72" stroke-opacity="0.18"/>
+      <text x="24" y="43" fill="#1B4F72" font-family="Menlo, monospace" font-size="16">FILES CHANGED</text>
+      <text x="24" y="96" fill="#070707" font-family="Georgia, serif" font-size="46" font-weight="700">2</text>
+    </g>
+    <g transform="translate(890 374)">
+      <rect width="150" height="128" rx="22" fill="#070707"/>
+      <text x="24" y="43" fill="#DFE8F3" font-family="Menlo, monospace" font-size="15">SCORE</text>
+      <text x="24" y="94" fill="#F5F0E8" font-family="Georgia, serif" font-size="43" font-weight="700">17/20</text>
+    </g>
+    <line x1="158" y1="550" x2="1042" y2="550" stroke="#1B4F72" stroke-opacity="0.18"/>
+    <text x="158" y="594" fill="#070707" font-family="Inter, Arial, sans-serif" font-size="21">Risk findings: shell-like input · pending push approval · redacted args · missing baseline</text>
+    <text x="158" y="636" fill="#4A5568" font-family="Menlo, monospace" font-size="17">mcp-gateway report --audit mcp-audit.jsonl --public</text>
+  </g>
+  <g transform="translate(1014 600)">
+    <rect width="66" height="66" rx="6" fill="#B22222"/>
+    <text x="33" y="43" fill="#F5F0E8" text-anchor="middle" font-family="Georgia, serif" font-size="28" font-weight="700">守</text>
+  </g>
+</svg>

@@ -1,0 +1,5 @@
+{"timestamp":"2026-05-13T00:00:00.000Z","server":"filesystem","tool":"read_file","action":"allowed","duration":9}
+{"timestamp":"2026-05-13T00:00:02.000Z","server":"filesystem","tool":"write_file","action":"allowed","args":{"apiKey":"placeholder-value"},"duration":31}
+{"timestamp":"2026-05-13T00:00:04.000Z","server":"github","tool":"push_changes","action":"pending-approval","reason":"Destructive tool requires approval"}
+{"timestamp":"2026-05-13T00:00:06.000Z","server":"database","tool":"drop_table","action":"blocked","reason":"High severity security finding in tool call","findings":[{"ruleId":"input-shell-chars","severity":"high","message":"Suspicious shell-like characters in input"}]}
+{"timestamp":"2026-05-13T00:00:08.000Z","server":"memory","tool":"search_nodes","action":"rate-limited","reason":"Rate limit exceeded"}

@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
 
-**A local-first firewall for MCP tool calls.** Rate limiting, audit logging, input scanning, tool-description poisoning detection, descriptor drift alerts, and approval holds for risky AI-agent actions.
+**A local-first firewall and black-box recorder for MCP-connected agents.** Block poisoned tools, detect descriptor drift, rate-limit runaway agents, hold risky actions for approval, and generate audit-ready run reports.
 
 ![mcp-gateway architecture](docs/assets/architecture.svg)
 
@@ -18,7 +18,9 @@ AI agents call MCP tools autonomously. Without a gateway:
 - Destructive operations (delete, push, drop) execute without confirmation
 - Tool inputs with shell injection or path traversal pass through unchecked
 - Poisoned tool descriptions hijack agent behavior silently
-- You have zero visibility into what was called, when, or why
+- You have no black-box report showing what was called, blocked, changed, or risky
+
+`mcp-gateway` sits between the AI client and MCP servers, enforces policy before tool calls reach the upstream server, then turns the audit trail into a share-safe report.
 
 ## Quick Start
 
@@ -194,6 +196,8 @@ mcp-gateway report --audit mcp-audit.jsonl # Generate a run report
 
 `mcp-gateway report` turns audit JSONL into a local-first black-box report for MCP-connected agent runs. It summarizes what tools ran, what was blocked, what looked risky, which descriptor or input findings appeared, and how much of the agent reliability score can be proven from available evidence.
 
+![sample black-box run report](docs/assets/black-box-report.svg)
+
 ```bash
 mcp-gateway report \
   --audit ./mcp-audit.jsonl \
@@ -209,6 +213,10 @@ Outputs:
 - Markdown report for review or public proof.
 - JSON summary for dashboards, Hermes follow-up, or CI. Raw audit entries are not copied into the report.
 - Redacted public mode for secret-like values and sensitive keys.
+
+Sample outputs:
+- [Sample Markdown report](docs/examples/agent-run-report.md)
+- [Sample JSON summary](docs/examples/agent-run-report.json)
 
 The report is MCP-focused in v1. It does not replace hosted tracing or try to parse every local agent log format; it uses the gateway's existing audit trail as the source of truth. Public mode also shortens input paths to file names so local machine paths are not exposed in shareable reports.
 
@@ -251,7 +259,8 @@ await gateway.start();
 | Security scanning | Input + description | None | None |
 | Tool poisoning detection | Block or warn | None | None |
 | Approval workflows | Hold + audit | None | None |
-| Audit logging | JSONL + dashboard | None | Basic |
+| Audit logging | JSONL + dashboard + run reports | None | Basic |
+| Black-box run report | Markdown + JSON | None | None |
 | Web dashboard | Built-in | N/A | None |
 | Architecture | Stdio proxy | N/A | HTTP proxy |
 | Multiplexing | Built-in | N/A | Built-in |

@@ -1,0 +1,5 @@
+{
+  "goal": "Verify an MCP-connected agent run before trusting the result.",
+  "outputContract": "Markdown and JSON black-box report.",
+  "evalRubric": "High-risk tool behavior is detected, scored, and redacted."
+}

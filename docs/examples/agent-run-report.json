@@ -1,0 +1,154 @@
+{
+  "generatedAt": "2026-05-13T01:08:38.998Z",
+  "input": {
+    "auditPath": "sample-audit.jsonl",
+    "configPath": "sample-config.json",
+    "diffPath": "sample-run.diff",
+    "metadataPath": "sample-metadata.json",
+    "publicMode": true
+  },
+  "summary": {
+    "totalCalls": 5,
+    "malformedAuditLines": 0,
+    "firstTimestamp": "2026-05-13T00:00:00.000Z",
+    "lastTimestamp": "2026-05-13T00:00:08.000Z",
+    "actions": {
+      "allowed": 2,
+      "pending-approval": 1,
+      "blocked": 1,
+      "rate-limited": 1
+    },
+    "servers": {
+      "filesystem": 2,
+      "github": 1,
+      "database": 1,
+      "memory": 1
+    },
+    "tools": {
+      "read_file": 1,
+      "write_file": 1,
+      "push_changes": 1,
+      "drop_table": 1,
+      "search_nodes": 1
+    },
+    "riskyToolCalls": 3,
+    "changedFiles": 2
+  },
+  "risks": [
+    {
+      "ruleId": "risky-tool-allowed",
+      "severity": "medium",
+      "message": "Risky-looking tool was allowed: filesystem.write_file.",
+      "evidence": "Tool name matches destructive or externally visible action patterns."
+    },
+    {
+      "ruleId": "tool-pending-approval",
+      "severity": "medium",
+      "message": "github.push_changes was pending-approval.",
+      "evidence": "Destructive tool requires approval"
+    },
+    {
+      "ruleId": "tool-blocked",
+      "severity": "high",
+      "message": "database.drop_table was blocked.",
+      "evidence": "High severity security finding in tool call"
+    },
+    {
+      "ruleId": "input-shell-chars",
+      "severity": "high",
+      "message": "Suspicious shell-like characters in input",
+      "evidence": "database.drop_table"
+    },
+    {
+      "ruleId": "tool-rate-limited",
+      "severity": "medium",
+      "message": "memory.search_nodes was rate-limited.",
+      "evidence": "Rate limit exceeded"
+    },
+    {
+      "ruleId": "audit-args-enabled",
+      "severity": "low",
+      "message": "Audit logging includes tool arguments.",
+      "evidence": "Use --public reports or disable includeArgs for sensitive environments."
+    },
+    {
+      "ruleId": "descriptor-baseline-missing",
+      "severity": "medium",
+      "message": "Descriptor baseline could not be read.",
+      "evidence": ".mcp-gateway-descriptors.json"
+    }
+  ],
+  "reliability": {
+    "total": 17,
+    "maxTotal": 20,
+    "knownTotal": 17,
+    "knownMax": 18,
+    "categories": [
+      {
+        "name": "Goal clarity",
+        "score": 2,
+        "status": "scored",
+        "evidence": "Run metadata includes a goal."
+      },
+      {
+        "name": "Tool permissions",
+        "score": 2,
+        "status": "scored",
+        "evidence": "Gateway config was available for policy inspection."
+      },
+      {
+        "name": "Memory source",
+        "score": null,
+        "status": "unknown",
+        "evidence": "MCP audit logs do not expose memory-source quality."
+      },
+      {
+        "name": "Output contract",
+        "score": 2,
+        "status": "scored",
+        "evidence": "Run metadata includes an output contract."
+      },
+      {
+        "name": "Eval/rubric",
+        "score": 2,
+        "status": "scored",
+        "evidence": "Run metadata includes an eval/rubric."
+      },
+      {
+        "name": "Observability",
+        "score": 2,
+        "status": "scored",
+        "evidence": "Scored from audit entries and audit config."
+      },
+      {
+        "name": "Recovery path",
+        "score": 2,
+        "status": "scored",
+        "evidence": "Scored from approval, block, and rate-limit evidence."
+      },
+      {
+        "name": "Human handoff",
+        "score": 2,
+        "status": "scored",
+        "evidence": "Approval policy exists."
+      },
+      {
+        "name": "Cost budget",
+        "score": 2,
+        "status": "scored",
+        "evidence": "Rate limits are configured."
+      },
+      {
+        "name": "Privacy boundary",
+        "score": 1,
+        "status": "scored",
+        "evidence": "Arguments are logged; public reports redact them."
+      }
+    ]
+  },
+  "metadata": {
+    "goal": "Verify an MCP-connected agent run before trusting the result.",
+    "outputContract": "Markdown and JSON black-box report.",
+    "evalRubric": "High-risk tool behavior is detected, scored, and redacted."
+  }
+}

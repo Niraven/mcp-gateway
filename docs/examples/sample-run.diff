@@ -1,0 +1,4 @@
+diff --git a/src/agent.ts b/src/agent.ts
++++ b/src/agent.ts
+diff --git a/config/mcp.json b/config/mcp.json
++++ b/config/mcp.json

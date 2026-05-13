@@ -102,6 +102,107 @@ AI agent security infrastructure.
 
 Not more agent hype. More control around what agents can touch.
 
+## Post 4: Black-Box Report Launch
+
+The missing artifact from most agent runs is a black-box report.
+
+When an AI agent uses tools, the important questions are not only:
+
+"Did it finish?"
+
+They are:
+
+- What tools did it call?
+- What got blocked?
+- What looked risky?
+- What changed?
+- Was there a human approval point?
+- Can I share the report without leaking secrets?
+
+I added this to `mcp-gateway`.
+
+The new `mcp-gateway report` command turns MCP audit logs into a local-first run report:
+
+- Markdown for review or public proof
+- JSON for dashboards, CI, or follow-up automation
+- risk findings for blocked/rate-limited/pending actions
+- reliability score based on available evidence
+- public mode that redacts secret-like values and private paths
+
+This is not meant to replace hosted tracing.
+
+It is the local, inspectable layer I want before giving agents access to real tools.
+
+The framing that keeps coming back to me:
+
+Before we trust agents more, we need better evidence of what they actually did.
+
+Repo: https://github.com/Niraven/mcp-gateway
+
+Still early. Still rough.
+
+But this feels like the right product surface:
+
+less agent hype, more agent control.
+
+## X Thread: Black-Box Report
+
+1/ Most agent runs are missing one artifact:
+
+a black-box report.
+
+2/ Not just "did the agent finish?"
+
+But:
+- what tools did it call?
+- what got blocked?
+- what changed?
+- what required approval?
+- what risky behavior appeared?
+
+3/ I added this to `mcp-gateway`.
+
+It turns MCP audit logs into Markdown + JSON reports.
+
+4/ The report scores the run on things like:
+- tool permissions
+- observability
+- recovery path
+- human handoff
+- privacy boundary
+
+5/ The important part: public mode.
+
+Reports should be shareable without leaking secrets, tokens, or local paths.
+
+6/ I do not think every builder needs a full hosted observability platform on day one.
+
+But every serious agent workflow needs some proof of what happened.
+
+7/ My current thesis:
+
+Agents need infrastructure, not just prompts.
+
+The next layer is control, audit, and recovery.
+
+Repo: https://github.com/Niraven/mcp-gateway
+
+## Demo Script: Black-Box Report
+
+1. Show the problem: an MCP-connected agent can call filesystem, GitHub, memory, or database tools.
+2. Run the malicious fixture and point out blocked descriptor poisoning.
+3. Run `mcp-gateway report --audit docs/examples/sample-audit.jsonl --config docs/examples/sample-config.json --out agent-run-report.md --json agent-run-report.json --public`.
+4. Open the Markdown report and show actions, risks, reliability score, and redaction.
+5. End with the takeaway: "Before trusting an agent run, generate evidence."
+
+## Outreach Angle
+
+Hey — I’m building a local-first MCP gateway that also produces black-box reports for agent runs.
+
+The goal is simple: before a developer trusts an agent with real tools, they can see what was called, blocked, rate-limited, approved, and redacted.
+
+Would this kind of Markdown/JSON report be useful for your MCP server or local-agent workflow?
+
 ## Carousel 1: MCP Gateway Launch
 
 Source files:

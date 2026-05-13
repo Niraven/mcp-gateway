@@ -1,0 +1,23 @@
+{
+  "servers": {
+    "filesystem": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-filesystem", "."] },
+    "github": { "command": "npx", "args": ["-y", "@modelcontextprotocol/server-github"] }
+  },
+  "policies": {
+    "rateLimit": { "maxCallsPerMinute": 30, "maxCallsPerHour": 500 },
+    "approval": {
+      "requireApprovalFor": [{ "type": "destructive" }, { "type": "pattern", "match": "delete|drop|push" }],
+      "approvalTimeout": 30000,
+      "defaultAction": "deny"
+    },
+    "security": {
+      "blockOnCritical": true,
+      "blockOnHigh": true,
+      "scanDescriptions": true,
+      "scanInputs": true,
+      "descriptorBaselinePath": "./.mcp-gateway-descriptors.json",
+      "descriptorChangeAction": "block"
+    }
+  },
+  "audit": { "enabled": true, "logPath": "./mcp-audit.jsonl", "includeArgs": true }
+}
