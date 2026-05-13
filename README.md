@@ -187,7 +187,30 @@ mcp-gateway start [-c config.json] [-v]   # Start the proxy
 mcp-gateway dashboard [-c config.json]     # Start monitoring dashboard
 mcp-gateway init                           # Generate sample config
 mcp-gateway validate config.json           # Validate config
+mcp-gateway report --audit mcp-audit.jsonl # Generate a run report
 ```
+
+## Run Reports
+
+`mcp-gateway report` turns audit JSONL into a local-first black-box report for MCP-connected agent runs. It summarizes what tools ran, what was blocked, what looked risky, which descriptor or input findings appeared, and how much of the agent reliability score can be proven from available evidence.
+
+```bash
+mcp-gateway report \
+  --audit ./mcp-audit.jsonl \
+  --config ./mcp-gateway.json \
+  --baseline ./.mcp-gateway-descriptors.json \
+  --diff ./run.diff \
+  --out ./agent-run-report.md \
+  --json ./agent-run-report.json \
+  --public
+```
+
+Outputs:
+- Markdown report for review or public proof.
+- JSON summary for dashboards, Hermes follow-up, or CI. Raw audit entries are not copied into the report.
+- Redacted public mode for secret-like values and sensitive keys.
+
+The report is MCP-focused in v1. It does not replace hosted tracing or try to parse every local agent log format; it uses the gateway's existing audit trail as the source of truth. Public mode also shortens input paths to file names so local machine paths are not exposed in shareable reports.
 
 ## Use with Claude Desktop
 

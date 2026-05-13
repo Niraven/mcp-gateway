@@ -18,7 +18,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/cli.js",
-    "test": "npm run build && tsx test/e2e.ts",
+    "test": "npm run build && tsx test/report.ts && tsx test/e2e.ts",
     "test:e2e": "npm run build && tsx test/e2e.ts"
   },
   "keywords": [

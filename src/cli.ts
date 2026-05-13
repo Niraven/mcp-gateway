@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Command } from "commander";
 import { McpGateway } from "./proxy/gateway.js";
 import { startDashboard } from "./dashboard/server.js";
+import { createRunReport, markdownReportRenderer } from "./reporting/report.js";
 import type { GatewayConfig } from "./types/index.js";
 
 const program = new Command();
@@ -147,6 +148,45 @@ program
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       process.stderr.write(`Invalid config: ${msg}\n`);
+      process.exit(1);
+    }
+  });
+
+program
+  .command("report")
+  .description("Generate a local run report from MCP Gateway audit logs")
+  .requiredOption("--audit <path>", "Path to MCP Gateway audit JSONL")
+  .option("-c, --config <path>", "Path to gateway config file")
+  .option("--baseline <path>", "Path to descriptor baseline JSON")
+  .option("--diff <path>", "Path to a git diff/patch file for the run")
+  .option("--metadata <path>", "Path to run metadata JSON")
+  .option("--out <path>", "Write Markdown report to this path instead of stdout")
+  .option("--json <path>", "Write JSON report summary to this path")
+  .option("--public", "Redact secrets and generate a share-safe report")
+  .action(async (opts) => {
+    try {
+      const report = await createRunReport({
+        auditPath: resolve(opts.audit),
+        configPath: opts.config ? resolve(opts.config) : undefined,
+        baselinePath: opts.baseline ? resolve(opts.baseline) : undefined,
+        diffPath: opts.diff ? resolve(opts.diff) : undefined,
+        metadataPath: opts.metadata ? resolve(opts.metadata) : undefined,
+        publicMode: !!opts.public,
+      });
+
+      const markdown = markdownReportRenderer.renderMarkdown(report);
+      if (opts.out) {
+        await writeFile(resolve(opts.out), markdown);
+      } else {
+        process.stdout.write(markdown);
+      }
+
+      if (opts.json) {
+        await writeFile(resolve(opts.json), markdownReportRenderer.renderJson(report));
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      process.stderr.write(`Error: ${msg}\n`);
       process.exit(1);
     }
   });

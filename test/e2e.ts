@@ -1,12 +1,17 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { execFile } from "node:child_process";
 import { mkdir, rm, writeFile, readFile, unlink } from "node:fs/promises";
 import { resolve } from "node:path";
+import { promisify } from "node:util";
 
 const TMP_DIR = resolve("test/.tmp");
 const CONFIG_PATH = resolve(TMP_DIR, "e2e-config.json");
 const AUDIT_PATH = resolve(TMP_DIR, "e2e-audit.jsonl");
 const BASELINE_PATH = resolve(TMP_DIR, "e2e-descriptors.json");
+const REPORT_PATH = resolve(TMP_DIR, "e2e-report.md");
+const REPORT_JSON_PATH = resolve(TMP_DIR, "e2e-report.json");
+const execFileAsync = promisify(execFile);
 
 async function setup() {
   await mkdir(TMP_DIR, { recursive: true });
@@ -179,12 +184,35 @@ async function runTests() {
     console.log("    WARN: Could not read audit log (may not have flushed yet).\n");
   }
 
+  console.log("[8] Generating run report...");
+  await execFileAsync("node", [
+    resolve("dist/cli.js"),
+    "report",
+    "--audit", AUDIT_PATH,
+    "--config", CONFIG_PATH,
+    "--baseline", BASELINE_PATH,
+    "--out", REPORT_PATH,
+    "--json", REPORT_JSON_PATH,
+    "--public",
+  ]);
+  const reportMarkdown = await readFile(REPORT_PATH, "utf-8");
+  const reportJson = JSON.parse(await readFile(REPORT_JSON_PATH, "utf-8"));
+  if (!reportMarkdown.includes("MCP Gateway Run Report") || !reportMarkdown.includes("Reliability Score")) {
+    console.error("\n    FAIL: Markdown report is missing expected sections.");
+    process.exit(1);
+  }
+  if (JSON.stringify(reportJson).includes("ghp_") || JSON.stringify(reportJson).includes("sk-")) {
+    console.error("\n    FAIL: JSON report contains an unredacted secret-like value.");
+    process.exit(1);
+  }
+  console.log("    PASS: Run report generated successfully.\n");
+
   // Cleanup
-  console.log("[8] Disconnecting...");
+  console.log("[9] Disconnecting...");
   await client.close();
   console.log("    Done.\n");
 
-  console.log("[9] Testing descriptor drift blocking...");
+  console.log("[10] Testing descriptor drift blocking...");
   await writeFile(CONFIG_PATH, JSON.stringify({
     servers: {
       drift: {

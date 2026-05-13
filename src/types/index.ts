@@ -77,6 +77,68 @@ export interface SecurityFinding {
   message: string;
 }
 
+export interface RunReportOptions {
+  auditPath: string;
+  configPath?: string;
+  baselinePath?: string;
+  diffPath?: string;
+  metadataPath?: string;
+  publicMode?: boolean;
+}
+
+export interface RunReport {
+  generatedAt: string;
+  input: {
+    auditPath: string;
+    configPath?: string;
+    baselinePath?: string;
+    diffPath?: string;
+    metadataPath?: string;
+    publicMode: boolean;
+  };
+  summary: {
+    totalCalls: number;
+    malformedAuditLines: number;
+    firstTimestamp?: string;
+    lastTimestamp?: string;
+    actions: Record<string, number>;
+    servers: Record<string, number>;
+    tools: Record<string, number>;
+    riskyToolCalls: number;
+    changedFiles: number;
+  };
+  risks: RunRiskFinding[];
+  reliability: ReliabilityScore;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RunRiskFinding {
+  ruleId: string;
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  message: string;
+  evidence?: string;
+}
+
+export interface ReliabilityScore {
+  total: number;
+  maxTotal: 20;
+  knownTotal: number;
+  knownMax: number;
+  categories: ReliabilityScoreCategory[];
+}
+
+export interface ReliabilityScoreCategory {
+  name: string;
+  score: 0 | 1 | 2 | null;
+  status: "scored" | "unknown";
+  evidence: string;
+}
+
+export interface ReportRenderer {
+  renderMarkdown(report: RunReport): string;
+  renderJson(report: RunReport): string;
+}
+
 export interface ToolCallContext {
   server: string;
   tool: string;
